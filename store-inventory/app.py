@@ -1,6 +1,6 @@
-#!/usr/bin/env python3 
 
 from collections import OrderedDict
+import sys
 import csv
 import datetime
 
@@ -8,8 +8,6 @@ from peewee import *
 
 
 db = SqliteDatabase('inventory.db')
-
-
 
 
 class Product(Model):
@@ -37,25 +35,29 @@ def csv_data():
         for row in rows:
             row['product_id'] = primary_key
             row['product_quanity'] = int(row['product_quanity'])
-            row['product_price'] = float(row['product_price' * 100].strip('$'))
+            row['product_price'] = int(float(row['product_price'].strip('$'))) * 100
             row['date_updated'] = datetime.datetime.strptime(row['date_updated'])
         try:
-            Product.create(product_name=row['product_name'], 
+            Product.create(
+            product_name=row['product_name'], 
             product_quanity=row['product_quanity'], 
             product_price=row['product_price'], 
             date_updated=row['date_updated']).save()
 
         except IntegrityError:
             product_list = Product.get(product_name=row['product_name'])
+            product_list.product_name = row['product_name']
             product_list.product_quanity = row['product_quanity']
             product_list.product_price = row['product_price']
             product_list.date_updated = row['date_updated']
             product_list.save()
 
+
 def view_menu():
     result = None
     
-    while choice != 'q':
+    while result != 'q':
+        print('=== MENU OPTIONS ===')
         print('Enter q to quit.')
         for key, value in menu.items():
             print('{}) {}'.format(key, value.__doc__))
@@ -63,17 +65,33 @@ def view_menu():
 
             if result in menu:
                 menu[result]()
-
-    
+   
 
 def display_product():
-    """Find and display item by it's product id."""
-    pass
+    """Find and display item by it's product id."""  
+    search = input('Enter the product id number you are searching for:  '.strip())
+    product_entry = Product.where(product_id='search').get()
+    while search != product_entry:
+        print('Product id does not exist.')
+        search = input('Enter the product id number you are searching for:  '.strip())
+    return product_entry
+    
+
 
 def add_product():
     """Add a new product."""
+    add_item = Product()
+
     try:
-        print('Enter your product name:   ')
+        add_item.product_name = input('Enter product name:  ')
+        add_item.product_quanity = input('Enter product quanity:  ')
+        add_item.product_price = input('Enter product price:  ')
+        save = input('Would you like to save this product? (y/n)  '.lower())
+
+        if save != 'n':
+            add_item.save()
+            print('Product saved.')
+
     except IntegrityError:
         product_list = Product.get(product_name=row['product_name'])
         if product_list.date_updated == datetime.datetime.now:
@@ -81,10 +99,16 @@ def add_product():
             product_list.product_quanity = row['product_quanity']
             product_list.product_price = row['product_price']
             product_list.save()
-    pass
+    
 
 def back_up_csv():
    """Back up this file.""" 
+   with open('new_inventory.csv', 'a') as csvfile:
+       fieldnames = ['product_id','product_name', 'product_quanity', 'product_price','date_updated']
+       inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+       inventorywriter.writeheader()
+       inventorywriter.writerow()
 
 
 
