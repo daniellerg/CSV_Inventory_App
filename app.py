@@ -13,7 +13,7 @@ db = SqliteDatabase('inventory.db')
 class Product(Model):
     product_id = PrimaryKeyField()
     product_name = CharField(max_length=100, unique=True)
-    product_quanity = IntegerField()
+    product_quantity = IntegerField()
     product_price = IntegerField()
     date_updated = DateTimeField(default=datetime.datetime.now)
 
@@ -29,25 +29,25 @@ def initialize():
 def csv_data():
 # Learned how to change dollars to cents from this site: https://codereview.stackexchange.com/questions/121074/safely-convert-dollars-to-cents/121077
 # Reminded me about how to strip the $: https://stackoverflow.com/questions/3887469/python-how-to-convert-currency-to-decimal
-    with open('inventory.csv', newline=' ') as csvfile:
+    with open('inventory.csv') as csvfile:
         store_list = csv.DictReader(csvfile, delimiter=',')
         rows = list(store_list)
         for row in rows:
-            row['product_id'] = primary_key
-            row['product_quanity'] = int(row['product_quanity'])
+            row['product_id'] = row['product_id']
+            row['product_quantity'] = int(row['product_quantity'])
             row['product_price'] = int(float(row['product_price'].strip('$'))) * 100
-            row['date_updated'] = datetime.datetime.strptime(row['date_updated'])
+            row['date_updated'] = datetime.datetime.strptime(row['date_updated'], '%m/%d/%Y')
         try:
             Product.create(
             product_name=row['product_name'], 
-            product_quanity=row['product_quanity'], 
+            product_quantity=row['product_quantity'], 
             product_price=row['product_price'], 
             date_updated=row['date_updated']).save()
 
         except IntegrityError:
             product_list = Product.get(product_name=row['product_name'])
             product_list.product_name = row['product_name']
-            product_list.product_quanity = row['product_quanity']
+            product_list.product_quantity = row['product_quantity']
             product_list.product_price = row['product_price']
             product_list.date_updated = row['date_updated']
             product_list.save()
@@ -70,7 +70,7 @@ def view_menu():
 def display_product():
     """Find and display item by it's product id."""  
     search = input('Enter the product id number you are searching for:  '.strip())
-    product_entry = Product.where(product_id='search').get()
+    product_entry = Product.select().where(Product.product_id==search)
     while search != product_entry:
         print('Product id does not exist.')
         search = input('Enter the product id number you are searching for:  '.strip())
@@ -84,7 +84,7 @@ def add_product():
 
     try:
         add_item.product_name = input('Enter product name:  ')
-        add_item.product_quanity = input('Enter product quanity:  ')
+        add_item.product_quantity = input('Enter product quantity:  ')
         add_item.product_price = input('Enter product price:  ')
         save = input('Would you like to save this product? (y/n)  '.lower())
 
@@ -96,7 +96,7 @@ def add_product():
         product_list = Product.get(product_name=row['product_name'])
         if product_list.date_updated == datetime.datetime.now:
             product_list.product.name = row('product_name')
-            product_list.product_quanity = row['product_quanity']
+            product_list.product_quantity = row['product_quantity']
             product_list.product_price = row['product_price']
             product_list.save()
     
@@ -104,7 +104,7 @@ def add_product():
 def back_up_csv():
    """Back up this file.""" 
    with open('new_inventory.csv', 'a') as csvfile:
-       fieldnames = ['product_id','product_name', 'product_quanity', 'product_price','date_updated']
+       fieldnames = ['product_id','product_name', 'product_quantity', 'product_price','date_updated']
        inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
        inventorywriter.writeheader()
