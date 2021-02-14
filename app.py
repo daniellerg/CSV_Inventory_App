@@ -3,6 +3,7 @@ from collections import OrderedDict
 import sys
 import csv
 import datetime
+import os
 
 from peewee import *
 
@@ -35,22 +36,27 @@ def csv_data():
         rows = list(store_list)
         for row in rows:
             row['product_name'] = row['product_name']
-            row['product_price'] = int(float(row['product_price'].strip('$'))) * 100
+            row['product_price'] = float(row['product_price'].replace('$','')) * 100
             row['product_quantity'] = int(row['product_quantity'])
             row['date_updated'] = datetime.datetime.strptime(row['date_updated'], '%m/%d/%Y')
-        try:
-            Product.create(product_name=row['product_name'], 
-            product_price=row['product_price'], 
-            product_quantity=row['product_quantity'], 
-            date_updated=row['date_updated'])
+            try:
+                Product.create(
+                product_name=row['product_name'], 
+                product_price=row['product_price'], 
+                product_quantity=row['product_quantity'], 
+                date_updated=row['date_updated']
+                ).save()
 
-        except IntegrityError:
-            product_list = Product.get(product_name=row['product_name'])
-            product_list.product_price = row['product_price']
-            product_list.product_quantity = row['product_quantity']
-            product_list.date_updated = row['date_updated']
-            product_list.save()
+            except IntegrityError:
+                product_list = Product.get(product_name=row['product_name'])
+                product_list.product_price = row['product_price']
+                product_list.product_quantity = row['product_quantity']
+                product_list.date_updated = row['date_updated']
+                product_list.save()
 
+
+def clear():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def view_menu():
     result = None    
@@ -59,8 +65,10 @@ def view_menu():
         for key,value in menu.items():
             print('{}) {}'.format(key, value.__doc__))           
         result = input('Enter your choice here:  ').lower().strip()
+        print('\n')
         
         if result in menu:
+            clear()
             menu[result]()
 
         elif result not in menu:
@@ -73,72 +81,141 @@ def display_product(search_query=None):
     product_entry = Product.select().order_by(Product.product_id.desc())
 
     if search_query:
-        product_entry = Product.select().where(Product.product_id==search_query)
-        
+        product_entry = Product.select().where(Product.product_id==search_query)    
+               
+
     for product in product_entry:
-        print(product)  
-        print('Press enter to see next product.')  
-        print('q) return to main menu.')
-        print('d) delete product')
-
-        choice = input('Enter your choice here:  '.lower().strip())
-
-        if choice == 'q':
-            break
-
-        elif choice == 'd':
-            delete_product(product)
+        clear()
+        print('\n')
+        print(' Product:', product.product_name,'\n',
+        'Price: $', product.product_price/100, '\n',
+        'Quantity:', product.product_quantity, '\n',
+        '\n', '\n') 
+        
+        if not search_query:
+            print('q) Return to main menu.')
+            print('d) Delete product')
+            print('Or press enter to see the next product.','\n')  
+        
+            choice = input('Enter your choice here:  ').lower().strip()
+            print('\n')
+            if choice == 'q':
+                clear()
+                break
+            elif choice == 'd':
+                delete_product(product)
 
 
 def delete_product(product):
-    if input("Delete product? (y/n)  ").lower() == 'y':
-        Product.delete_instance()
+    if input('Delete product? (y/n)  ').lower() == 'y':
+        Product.delete_instance(product)
         print('Product deleted.')
 
 
 def search_product():
+    """Search for product by ID#."""         
+    search = Product.select().order_by(Product.product_id.desc())
     while True:
         try:
-            search_query = display_product(int(input('Enter the product id you wish to search:  '.strip())))
+            search_query = display_product(int(input('Enter the product ID you wish to search for:  '.strip()))) 
             if search_query != Product.product_id:
-                raise ValueError
+                print('n')
+            else:
+                break 
+        except ValueError:
+            print('Invalid character, please try again.') 
+    while True:
+        search_again = input('Enter "y" to search again. Enter "q" to return to the main menu:  ')             
+        if search_again == 'y':
+            search_query = display_product(int(input('Enter the product ID you wish to search for:  '.strip())))                       
+        elif search_again == 'q':
+            break
+        elif search_again != 'y' or 'q':
+            print('Try either "y" or "q".')       
+                            
+
+def new_product_name():
+    new = Product()
+    while True:
+        try:    
+            new.name = input('Enter product name:  ')
 
         except ValueError:
-            print('Product id does not exist.')
-            search_query = display_product(int(input('Enter the product id you wish to search:  '.strip())))
+            print('Invalid character, please try again.')
+            continue
+        else:
+            break
+    return new.name
+
+
+def new_product_price():
+    new = Product()
+    while True:
+        try:
+            new.price = float(input('Enter product price:$  '))
+            new.price = int(new.price * 100)
+        
+        except ValueError:
+            print('Invalid character, please try again.')
+            continue
+        else:
+            break
+    return new.price
+
+
+def new_product_quantity():
+    new = Product()
+    while True:
+        try:
+            new.quantity = int(input('Enter product quantity:  '))
+
+        except ValueError:
+            print('Invalid character, please try again.')
+            continue
+        else:
+            break
+    return new.quantity
 
 
 def add_product():
     """Add a product to inventory."""
-    add_item = Product()
-
-    try:
-        add_item.product_name = input('Enter product name:  ')
-        add_item.product_price = input('Enter product price:  ')
-        add_item.product_quantity = input('Enter product quantity:  ')
-        save = input('Would you like to save this product? (y/n)  '.lower())
-
-        if save != 'n':
-            add_item.save()
+   
+    new_name = new_product_name()
+    new_price = new_product_price()
+    new_quantity = new_product_quantity()
+        
+    if input('Would you like to save this product? (y/n)  ').lower() != 'n': 
+        try:
+            Product.create(
+            product_name = new_name, 
+            product_price = new_price, 
+            product_quantity = new_quantity).save()
             print('Product saved.')
 
-    except IntegrityError:
-        product_list = Product.get(product_name=row['product_name'])
-        if product_list.date_updated == datetime.datetime.now:
-            product_list.product.name = row('product_name')
-            product_list.product_price = row['product_price']
-            product_list.product_quantity = row['product_quantity']          
+        except IntegrityError:
+            product_list = Product.get(product_name=new_name)
+            product_list.product_name = new_name
+            product_list.product_price = new_price
+            product_list.product_quantity = new_quantity        
             product_list.save()
-    
 
-def back_up_csv():
-   """Backup inventory.""" 
-   with open('new_inventory.csv', 'a') as csvfile:
-       fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
-       inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-       inventorywriter.writeheader()
-       #inventorywriter.writerow()
+def backup_csv():
+    """Backup inventory.""" 
+    with open('new_inventory.csv', 'a') as csvfile:
+        fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
+        inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        inventorywriter.writeheader()      
+        backup = Product.select()
+        
+        for product in backup:
+            inventorywriter.writerow({
+            'product_name': Product.product_name, 
+            'product_price': Product.product_price, 
+            'product_quantity': Product.product_quantity,     
+            'date_updated': Product.date_updated}) 
+
 
 
 def quit_inventory():
@@ -148,8 +225,9 @@ def quit_inventory():
 
 menu = OrderedDict([
     ('v', display_product),
+    ('s', search_product),
     ('a', add_product),
-    ('b', back_up_csv),
+    ('b', backup_csv),
     ('q', quit_inventory)
     ])
 
