@@ -87,9 +87,11 @@ def display_product(search_query=None):
     for product in product_entry:
         clear()
         print('\n')
-        print(' Product:', product.product_name,'\n',
+        print(' ID:', product.product_id, '\n',
+        'Product:', product.product_name,'\n',
         'Price: $', product.product_price/100, '\n',
         'Quantity:', product.product_quantity, '\n',
+        'Last updated:', product.date_updated.strftime('%m/%d/%Y'),
         '\n', '\n') 
         
         if not search_query:
