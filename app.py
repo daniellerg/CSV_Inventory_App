@@ -78,8 +78,8 @@ def view_menu():
             print('\n','Please try an option from the menu.')
    
 
-def display_product(search_query=None):
-    """Find an inventory item.""" 
+def display_products(search_query=None):
+    """Display inventory items.""" 
 # Displays the inventory 1 product at a time.
     product_entry = Product.select().order_by(Product.product_id.desc())
 
@@ -119,20 +119,25 @@ def delete_product(product):
 def search_product():
     """Search for product by ID#."""   
 # Allows user to search products by the inventory id#.
-    search = Product.select().order_by(Product.product_id.desc())
+    products = Product.select().order_by(Product.product_id.desc())
     while True:
         try:
-            search_query = display_product(int(input('Enter the product ID you wish to search for:  '.strip()))) 
-            if search_query != Product.product_id:
-                print('n')
+            search_query = display_products(input('Enter the product ID you wish to search for:  ')) 
+            search_query = int(search_query)
+            if search_query.isnumeric() and search_query <= len(products):
+                search = Product.get_by_id(int(search_query))
+                break
             else:
-                break 
+                print('Invalid ID, please try again.')
+
         except ValueError:
             print('Invalid character, please try again.') 
+            continue
+
     while True:
         search_again = input('Enter "y" to search again. Enter "q" to return to the main menu:  ')             
         if search_again == 'y':
-            search_query = display_product(int(input('Enter the product ID you wish to search for:  '.strip())))                       
+            search_query = display_products(int(input('Enter the product ID you wish to search for:  '.strip())))                       
         elif search_again == 'q':
             break
         elif search_again != 'y' or 'q':
@@ -229,8 +234,8 @@ def quit_inventory():
 
 
 menu = OrderedDict([
-    ('v', display_product),
-    ('s', search_product),
+    ('v', search_product),
+    ('d', display_products),
     ('a', add_product),
     ('b', backup_csv),
     ('q', quit_inventory)
