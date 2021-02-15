@@ -29,6 +29,7 @@ def initialize():
 
 
 def csv_data():
+# Reads, cleans and installs the csv data into a list.
 # Learned how to change dollars to cents from this site: https://codereview.stackexchange.com/questions/121074/safely-convert-dollars-to-cents/121077
 # Reminded me about how to strip the $: https://stackoverflow.com/questions/3887469/python-how-to-convert-currency-to-decimal
     with open('inventory.csv') as csvfile:
@@ -58,7 +59,9 @@ def csv_data():
 def clear():
     os.system('cls' if os.name == 'nt' else 'clear')
 
+    
 def view_menu():
+# Using OrderedDict to create, view and access the inventory's menu.
     result = None    
     while True:
         print('\n','=== MENU OPTIONS ===','\n')
@@ -73,17 +76,16 @@ def view_menu():
 
         elif result not in menu:
             print('\n','Please try an option from the menu.')
-
    
 
 def display_product(search_query=None):
-    """Find an inventory item."""  
+    """Find an inventory item.""" 
+# Displays the inventory 1 product at a time.
     product_entry = Product.select().order_by(Product.product_id.desc())
 
     if search_query:
         product_entry = Product.select().where(Product.product_id==search_query)    
                
-
     for product in product_entry:
         clear()
         print('\n')
@@ -113,7 +115,8 @@ def delete_product(product):
 
 
 def search_product():
-    """Search for product by ID#."""         
+    """Search for product by ID#."""   
+# Allows user to search products by the inventory id#.
     search = Product.select().order_by(Product.product_id.desc())
     while True:
         try:
@@ -179,7 +182,7 @@ def new_product_quantity():
 
 def add_product():
     """Add a product to inventory."""
-   
+# Collects data from the users and inputs a new product into the inventory.   
     new_name = new_product_name()
     new_price = new_product_price()
     new_quantity = new_product_quantity()
@@ -202,6 +205,7 @@ def add_product():
 
 def backup_csv():
     """Backup inventory.""" 
+# Creates a backup inventory.
     with open('new_inventory.csv', 'a') as csvfile:
         fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
         inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -215,7 +219,6 @@ def backup_csv():
             'product_price': Product.product_price, 
             'product_quantity': Product.product_quantity,     
             'date_updated': Product.date_updated}) 
-
 
 
 def quit_inventory():
