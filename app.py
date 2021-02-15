@@ -119,30 +119,27 @@ def delete_product(product):
 def search_product():
     """Search for product by ID#."""   
 # Allows user to search products by the inventory id#.
-    products = Product.select().order_by(Product.product_id.desc())
     while True:
         try:
-            search_query = display_products(input('Enter the product ID you wish to search for:  ')) 
-            search_query = int(search_query)
-            if search_query.isnumeric() and search_query <= len(products):
-                search = Product.get_by_id(int(search_query))
-                break
-            else:
-                print('Invalid ID, please try again.')
-
+            search = int(input('Enter the product ID you wish to search for:  ')) 
         except ValueError:
-            print('Invalid character, please try again.') 
-            continue
-
-    while True:
-        search_again = input('Enter "y" to search again. Enter "q" to return to the main menu:  ')             
-        if search_again == 'y':
-            search_query = display_products(int(input('Enter the product ID you wish to search for:  '.strip())))                       
-        elif search_again == 'q':
-            break
-        elif search_again != 'y' or 'q':
-            print('Try either "y" or "q".')       
-                            
+            print('Invalid character, please try again.')           
+        else:
+            try:
+                item = Product.get_by_id(search)
+            except Product.DoesNotExist:   
+                print('Invalid ID, please try again.')
+            else:
+                clear()
+                print('\n')
+                print(' ID:', item.product_id, '\n',
+                'Product:', item.product_name,'\n',
+                'Price: $', item.product_price/100, '\n',
+                'Quantity:', item.product_quantity, '\n',
+                'Last updated:', item.date_updated.strftime('%m/%d/%Y'),
+                '\n', '\n') 
+                break
+                                       
 
 def new_product_name():
     new = Product()
@@ -213,19 +210,20 @@ def add_product():
 def backup_csv():
     """Backup inventory.""" 
 # Creates a backup inventory.
-    with open('new_inventory.csv', 'a') as csvfile:
+    
+    with open('backup.csv', 'w', newline='') as csvfile:
         fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
         inventorywriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-        inventorywriter.writeheader()      
-        backup = Product.select()
-        
+        inventorywriter.writeheader() 
+        backup = Product.select().order_by(Product.product_id.asc())            
         for product in backup:
             inventorywriter.writerow({
-            'product_name': Product.product_name, 
-            'product_price': Product.product_price, 
-            'product_quantity': Product.product_quantity,     
-            'date_updated': Product.date_updated}) 
+            'product_name': product.product_name, 
+            'product_price': '$' + '{}'.format(product.product_price / 100), 
+            'product_quantity': product.product_quantity,     
+            'date_updated': product.date_updated.strftime('%m/%d/%Y')}) 
+        print('Successfully updated!')   
 
 
 def quit_inventory():
