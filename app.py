@@ -50,10 +50,12 @@ def csv_data():
 
             except IntegrityError:
                 product_list = Product.get(product_name=row['product_name'])
-                product_list.product_price = row['product_price']
-                product_list.product_quantity = row['product_quantity']
-                product_list.date_updated = row['date_updated']
-                product_list.save()
+
+                if product_list.date_updated <= row['date_updated']:
+                    product_list.product_price = row['product_price']
+                    product_list.product_quantity = row['product_quantity']
+                    product_list.date_updated = row['date_updated']
+                    product_list.save()
 
 
 def clear():
@@ -78,14 +80,10 @@ def view_menu():
             print('\n','Please try an option from the menu.')
    
 
-def display_products(search_query=None):
+def display_products():
     """Display inventory items.""" 
 # Displays the inventory 1 product at a time.
-    product_entry = Product.select().order_by(Product.product_id.desc())
-
-    if search_query:
-        product_entry = Product.select().where(Product.product_id==search_query)    
-               
+    product_entry = Product.select().order_by(Product.product_id.desc())               
     for product in product_entry:
         clear()
         print('\n')
@@ -94,20 +92,19 @@ def display_products(search_query=None):
         'Price: $', product.product_price/100, '\n',
         'Quantity:', product.product_quantity, '\n',
         'Last updated:', product.date_updated.strftime('%m/%d/%Y'),
-        '\n', '\n') 
-        
-        if not search_query:
-            print('q) Return to main menu.')
-            print('d) Delete product')
-            print('Or press enter to see the next product.','\n')  
-        
-            choice = input('Enter your choice here:  ').lower().strip()
-            print('\n')
-            if choice == 'q':
-                clear()
-                break
-            elif choice == 'd':
-                delete_product(product)
+        '\n', '\n')       
+       
+        print('q) Return to main menu.')
+        print('d) Delete product')
+        print('Or press enter to see the next product.','\n')  
+    
+        choice = input('Enter your choice here:  ').lower().strip()
+        print('\n')
+        if choice == 'q':
+            clear()
+            break
+        elif choice == 'd':
+            delete_product(product)
 
 
 def delete_product(product):
