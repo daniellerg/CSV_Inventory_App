@@ -116,6 +116,7 @@ def delete_product(product):
 def search_product():
     """Search for product by ID#."""   
 # Allows user to search products by the inventory id#.
+# Recieved assistance from Jennifer Nordell to use and utilize the get_by_id function. 
     while True:
         try:
             search = int(input('Enter the product ID you wish to search for:  ')) 
